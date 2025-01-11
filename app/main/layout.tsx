@@ -1,7 +1,11 @@
 import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
 
+
 import { siteConfig } from "@/config/site";
+
+import { Navbar } from "@/components/navbar";
+
 import ProtectedRoute from "@/components/protected-route";
 
 export const metadata: Metadata = {
@@ -22,18 +26,19 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function AuthLayout({
+export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
     <ProtectedRoute>
-    <div className="flex flex-col h-screen">
-      <main className="flex-grow flex justify-center items-center">
-        {children}
-      </main>
-    </div>
+      <div className="relative flex flex-col h-screen">
+        <Navbar />
+        <main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
+          {children}
+        </main>
+      </div>
     </ProtectedRoute>
   );
 }

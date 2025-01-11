@@ -1,69 +1,41 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "Next.js + NextUI",
-  description: "Make beautiful websites regardless of your design experience.",
+  name: "Tracking",
+  description: "Need help with your school work? We got you covered!",
+  welcomeMsg: "Welcome back",
   navItems: [
     {
-      label: "Home",
-      href: "/",
-    },
-    {
-      label: "Docs",
-      href: "/docs",
-    },
-    {
-      label: "Pricing",
-      href: "/pricing",
-    },
-    {
-      label: "Blog",
-      href: "/blog",
-    },
-    {
-      label: "About",
-      href: "/about",
-    },
-  ],
-  navMenuItems: [
-    {
-      label: "Profile",
-      href: "/profile",
-    },
-    {
       label: "Dashboard",
-      href: "/dashboard",
+      href: "/main/dashboard",
     },
     {
-      label: "Projects",
-      href: "/projects",
+      label: "Tracking",
+      href: "/main/tracking",
     },
     {
-      label: "Team",
-      href: "/team",
+      label: "User",
+      href: "/main/user",
     },
     {
-      label: "Calendar",
-      href: "/calendar",
+      label: "Devices",
+      href: "/main/devices",
     },
     {
-      label: "Settings",
-      href: "/settings",
-    },
-    {
-      label: "Help & Feedback",
-      href: "/help-feedback",
-    },
-    {
-      label: "Logout",
-      href: "/logout",
+      label: "Reports",
+      href: "/main/reports",
     },
   ],
-  links: {
-    github: "https://github.com/nextui-org/nextui",
-    twitter: "https://twitter.com/getnextui",
-    docs: "https://nextui.org",
-    discord: "https://discord.gg/9b6yyZKmH4",
-    sponsor: "https://patreon.com/jrgarciadev",
-  },
+  profileItems: [
+    {
+      key: "profile",
+      content: "Signed in as",
+      email: "zoey@example.com",
+      isProfile: true,
+    },
+    { key: "logout", 
+      content: "Log Out", 
+      color: "danger"
+    },
+  ]
 };
