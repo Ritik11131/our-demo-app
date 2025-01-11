@@ -9,7 +9,7 @@ interface GenericMapProps {
   className?: string;
 }
 
-const GenericMap = memo(({ geojsonData, className = 'h-[600px] w-full' }: GenericMapProps) => {
+const GenericMap = memo(({ geojsonData, className = 'h-[500px] w-full' }: GenericMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);

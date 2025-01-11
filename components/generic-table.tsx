@@ -39,7 +39,7 @@ interface GenericTableProps {
   statusOptions?: Array<{ name: string; uid: string }>;
   statusColorMap?:any,
   initialVisibleColumns: Array<string>;
-  onAddNew: () => void;
+  onAddNew?: () => void;
 }
 
 // const INITIAL_VISIBLE_COLUMNS = ["name", "role", "status", "actions"];
@@ -62,7 +62,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
   );
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
+  const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor | any>({
     column: "age",
     direction: "ascending",
   });
@@ -223,6 +223,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
+            {statusOptions && 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -247,6 +248,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
                 ))}
               </DropdownMenu>
             </Dropdown>
+  }
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -271,9 +273,10 @@ const GenericTable: React.FC<GenericTableProps> = ({
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button onPress={() => onAddNew()} color="primary" endContent={<PlusIcon />}>
+            {onAddNew &&  <Button onPress={() => onAddNew && onAddNew()} color="primary" endContent={<PlusIcon />}>
               Add New
-            </Button>
+            </Button> }
+           
           </div>
         </div>
         <div className="flex justify-between items-center">
@@ -314,22 +317,6 @@ const GenericTable: React.FC<GenericTableProps> = ({
         </span>
         
         <div className="hidden sm:flex w-[30%] justify-end gap-2">
-          {/* <Button
-            isDisabled={pages === 1}
-            size="sm"
-            variant="flat"
-            onPress={onPreviousPage}
-          >
-            Previous
-          </Button>
-          <Button
-            isDisabled={pages === 1}
-            size="sm"
-            variant="flat"
-            onPress={onNextPage}
-          >
-            Next
-          </Button> */}
             <Pagination
           isCompact
           showControls

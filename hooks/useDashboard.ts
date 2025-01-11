@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { useApiClient } from './useApiClient';
 import { ResponseInterface } from '@/interface/response';
 
-export const useCrew = () => {
+export const useDashboard = () => {
   const { isLoading, request } = useApiClient<ResponseInterface>({ showToast: true });
 
   const fetchVehicleList = useCallback(async () => {

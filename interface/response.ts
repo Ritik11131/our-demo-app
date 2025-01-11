@@ -1,4 +1,4 @@
 export interface ResponseInterface {
-    data:string;
+    data:any;
     result:boolean;
 }
