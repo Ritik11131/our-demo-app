@@ -81,12 +81,17 @@ const GenericTable: React.FC<GenericTableProps> = ({
 
   const filteredItems = React.useMemo(() => {
     let filteredUsers = [...data];
-
+  
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.name.toLowerCase().includes(filterValue.toLowerCase())
-      );
+      filteredUsers = filteredUsers.filter((user) => {
+        return columns.some((column) => {
+          const cellValue = user[column.uid];
+          // Check if the cell value is a string and if it matches the filter value
+          return typeof cellValue === 'string' && cellValue.toLowerCase().includes(filterValue.toLowerCase());
+        });
+      });
     }
+  
     if (
       statusFilter !== "all" &&
       Array.from(statusFilter).length !== statusOptions?.length
@@ -95,9 +100,9 @@ const GenericTable: React.FC<GenericTableProps> = ({
         Array.from(statusFilter).includes(user.status)
       );
     }
-
+  
     return filteredUsers;
-  }, [data, filterValue, statusFilter]);
+  }, [data, filterValue, statusFilter, columns]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
@@ -119,7 +124,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
   }, [sortDescriptor, items]);
 
   const renderCell = React.useCallback((user: User, columnKey: React.Key) => {
-    const cellValue = user[columnKey as keyof User];
+    const cellValue = user[columnKey as keyof User];    
 
     switch (columnKey) {
       case "name":
@@ -143,17 +148,18 @@ const GenericTable: React.FC<GenericTableProps> = ({
             {cellValue}
           </Chip>
         );
-      case "status":
-        return (
-          <Chip
-            className="capitalize"
-            color={statusColorMap[user.status]}
-            size="sm"
-            variant="flat"
-          >
-            {cellValue}
-          </Chip>
-        );
+        case "status":
+          case "ign":
+            return (
+              <Chip
+                className="capitalize"
+                color={columnKey === "status" ? statusColorMap[user.status] : (cellValue ? "success" : "danger")}
+                size="sm"
+                variant="flat"
+              >
+                {columnKey === "status" ? cellValue : (cellValue ? "On" : "Off")}
+              </Chip>
+            );
       case "actions":
         return (
           <div className="relative flex justify-end items-center gap-2">
@@ -171,7 +177,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
           </div>
         );
       default:
-        return cellValue;
+        return cellValue ?? '-';
     }
   }, []);
 
@@ -216,14 +222,14 @@ const GenericTable: React.FC<GenericTableProps> = ({
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search by name..."
+            placeholder="Search ..."
             startContent={<SearchIcon />}
             value={filterValue}
             onClear={() => onClear()}
             onValueChange={onSearchChange}
           />
           <div className="flex gap-3">
-            {statusOptions && 
+            {/* {statusOptions && 
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -248,7 +254,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
                 ))}
               </DropdownMenu>
             </Dropdown>
-  }
+  } */}
             <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button
@@ -281,7 +287,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {data.length} users
+            Total {data.length} items
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:

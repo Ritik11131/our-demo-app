@@ -6,104 +6,172 @@ import { useDashboard } from "@/hooks/useDashboard";
 import { DashboardData } from "@/interface/dashboard";
 import { ResponseInterface } from "@/interface/response";
 import { Card, CardBody, CardHeader } from "@nextui-org/card";
-import { Image } from "@nextui-org/image";
 import { Spinner } from "@nextui-org/spinner";
 import { CarFront } from "lucide-react";
 import React from "react";
 
+type TableDataItem = {
+  vehicleNo?: string;
+  deviceId?: string;
+  deviceTime?: string;
+  ign?: boolean;
+  extVolt?: number;
+};
+
 const Dashboard = () => {
   const { isLoading, fetchVehicleList } = useDashboard();
-  const [cardsData, setCardsData] = React.useState<
-    { name: string; count: number; colorCode: string }[]
+  const [mapCardData, setMapCardData] = React.useState<
+    { key:string, name: string; count: number; colorCode: string; items: any[] }[]
   >([]);
-  const [tableData, setTableData] = React.useState<DashboardData | null>(null);
-  const [mapData, setMapData] = React.useState<DashboardData | null>(null);
+  const [tableData, setTableData] = React.useState<TableDataItem[]>([]);
+  const [markersList, setMarkersList] = React.useState<{
+    colorCode: string;
+    items: { name: string; latitude: number; longitude: number }[];
+  }>({ colorCode: "", items: [] });
 
-  const statusColorMapping = {
-    running: "green",
-    never_connected: "grey",
-    idle: "orange",
-    offline: "red", // Default color for 'offline' status
-  };
+  // Memoize the dynamic card data calculation
+  // const getDynamicCardsData = React.useMemo(() => {
+  //   return (data: DashboardData[]) => {
+  //     const statusMap = new Map<string, { count: number }>([
+  //       ["running", { count: 0 }],
+  //       ["stop", { count: 0 }],
+  //       ["idle", { count: 0 }],
+  //       ["never_connected", { count: 0 }],
+  //       ["offline", { count: 0 }],
+  //       ["total", { count: 0 }],
+  //     ]);
 
-  React.useEffect(() => {
-    loadDashboard();
-  }, [fetchVehicleList]);
+  //     data.forEach((object) => {
+  //       const status = object?.position?.status?.status || "Unknown";
+  //       const formattedStatus = normalizeStatus(status);
 
-  const getDynamicCardsData = React.useMemo(() => {
+  //       if (statusMap.has(formattedStatus)) {
+  //         const existing = statusMap.get(formattedStatus)!;
+  //         statusMap.set(formattedStatus, { count: existing.count + 1 });
+  //       } else {
+  //         statusMap.set("offline", {
+  //           count: statusMap.get("offline")!.count + 1,
+  //         });
+  //       }
+
+  //       statusMap.set("total", { count: statusMap.get("total")!.count + 1 });
+  //     });
+
+  //     return Array.from(statusMap.entries()).map(([status, { count }]) => ({
+  //       key: status.replace(/\s+/g, "_").toLowerCase(),
+  //       name: status
+  //         .replace(/_/g, " ")
+  //         .replace(/\b\w/g, (char) => char.toUpperCase())
+  //         .replace(/\s+/g, " "),
+  //       count,
+  //       colorCode: getColorForStatus(status),
+  //     }));
+  //   };
+  // }, []);
+
+  const processDataWithDeviceInfo = React.useMemo(() => {
     return (data: DashboardData[]) => {
-      // Initialize the fixed statuses with 0 count using an array of tuples
-      const statusMap = new Map<string, { count: number }>([
-        ["running", { count: 0 }],
-        ["stop", { count: 0 }],
-        ["idle", { count: 0 }],
-        ["never_connected", { count: 0 }],
-        ["offline", { count: 0 }],
-        ["total", { count: 0 }],
+      const statusMap = new Map<
+        string,
+        {
+          count: number;
+          items: { name: string; latitude: number; longitude: number }[];
+        }
+      >([
+        ["running", { count: 0, items: [] }],
+        ["stop", { count: 0, items: [] }],
+        ["idle", { count: 0, items: [] }],
+        ["never_connected", { count: 0, items: [] }],
+        ["offline", { count: 0, items: [] }],
+        ["total", { count: 0, items: [] }],
       ]);
 
-      // Iterate through the data and update the statusMap
-      data.forEach((object: DashboardData) => {
+      data.forEach((object) => {
         const status = object?.position?.status?.status || "Unknown";
-
-        // Normalize the status value
         const formattedStatus = normalizeStatus(status);
 
-        // Update the count for the normalized status
+        const vehicleNo = object?.device?.vehicleNo || "Unknown";
+        const latitude = object?.position?.latitude;
+        const longitude = object?.position?.longitude;
+
+        // Update status count and items
         if (statusMap.has(formattedStatus)) {
           const existing = statusMap.get(formattedStatus)!;
-          statusMap.set(formattedStatus, { count: existing.count + 1 });
+          existing.items.push({ name: vehicleNo, latitude, longitude });
+          statusMap.set(formattedStatus, {
+            count: existing.count + 1,
+            items: existing.items,
+          });
         } else {
-          // If a status isn't recognized, assign it to 'offline'
+          const offline = statusMap.get("offline")!;
+          offline.items.push({ name: vehicleNo, latitude, longitude });
           statusMap.set("offline", {
-            count: statusMap.get("offline")!.count + 1,
+            count: offline.count + 1,
+            items: offline.items,
           });
         }
 
-        // Increment the total count
-        statusMap.set("total", { count: statusMap.get("total")!.count + 1 });
+        // Update total count and items
+        const total = statusMap.get("total")!;
+        total.items.push({ name: vehicleNo, latitude, longitude });
+        statusMap.set("total", {
+          count: total.count + 1,
+          items: total.items,
+        });
       });
 
-      // Convert the Map to an array for rendering
-      return Array.from(statusMap.entries()).map(([status, { count }]) => ({
-        key: status.replace(/\s+/g, "_").toLowerCase(),
-        name: status
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (char) => char.toUpperCase())
-          .replace(/\s+/g, " "),
-        count,
-        colorCode: getColorForStatus(status),
-      }));
+      // Return the formatted data
+      return Array.from(statusMap.entries()).map(
+        ([status, { count, items }]) => ({
+          key: status.replace(/\s+/g, "_").toLowerCase(),
+          name: status
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (char) => char.toUpperCase())
+            .replace(/\s+/g, " "),
+          count,
+          colorCode: getColorForStatus(status),
+          items, // List of devices with name, latitude, and longitude
+        })
+      );
     };
   }, []);
 
-  // Helper function to normalize the status values
   const normalizeStatus = (status: string) => {
-    // Normalize the status by checking and replacing as needed
     const formattedStatus = status.replace(/\s+/g, "_").toLowerCase();
-
-    // Group statuses that are not explicitly handled into 'offline'
     if (
       ["running", "stop", "idle", "never_connected"].includes(formattedStatus)
     ) {
       return formattedStatus;
     }
-    return "offline"; // If status is anything else, treat it as 'offline'
+    return "offline";
   };
 
-  // Function to return color code based on the status
-  const getColorForStatus = (status: string) => {
-    const statusColorMapping: { [key: string]: string } = {
-      running: "#22c55e",
-      stop: "#ef4444",
-      idle: "#a16207",
-      never_connected: "#737373",
-      offline: "#6b7280",
-      total: "#3b82f6", // You can customize this color as needed
-    };
+  const statusColorMapping: { [key: string]: string } = {
+    running: "#22c55e",
+    stop: "#ef4444",
+    idle: "#facc15",
+    never_connected: "#737373",
+    offline: "#6b7280",
+    total: "#3b82f6",
+  };
 
+  const getColorForStatus = (status: string) => {
     return statusColorMapping[status.toLowerCase()] || "#6b7280";
   };
+
+  // Memoize dynamic table data calculation to prevent re-renders
+  const getDynamicTableData = React.useMemo(() => {
+    return (data: DashboardData[]) => {
+      return data.map((item, index) => {
+        const {
+          device: { vehicleNo, deviceId } = {},
+          position: { deviceTime, details: { ign, extVolt } = {} } = {},
+        } = item;
+
+        return { vehicleNo, deviceId, deviceTime, ign, extVolt, id: index };
+      });
+    };
+  }, []);
 
   const loadDashboard = async () => {
     try {
@@ -113,27 +181,41 @@ const Dashboard = () => {
         return;
       }
 
-      // Call the memoized function to calculate the dynamic cards data
-      const dynamicCardsData = getDynamicCardsData(response.data);
+      // Memoized function to calculate the dynamic cards data
+      const dynamicCardsData = processDataWithDeviceInfo(response?.data);
+      setMapCardData(dynamicCardsData);
+      setMarkersList({
+        colorCode: dynamicCardsData[dynamicCardsData.length - 1]?.colorCode,
+        items: dynamicCardsData[dynamicCardsData.length - 1]?.items,
+      }); // Initially set it to Total items
 
-      setCardsData(dynamicCardsData);
+      // Memoized function to calculate dynamic table data
+      const dynamicTableData = getDynamicTableData(response?.data);
+      setTableData(dynamicTableData);
     } catch (error) {
-      console.error("Failed to fetch parents:", error);
+      console.error("Failed to fetch data:", error);
     }
   };
 
-
   const columns = [
-    { name: "ID", uid: "id", sortable: true },
-    { name: "NAME", uid: "name", sortable: true },
-    { name: "ROLE", uid: "role", sortable: true },
-    { name: "LICENSE NO", uid: "licenseNumber" },
-    { name: "EMAIL", uid: "email" },
-    { name: "CONTACT NO", uid: "contactNumber", sortable: true },
+    { name: "NAME", uid: "vehicleNo", sortable: true },
+    { name: "IMEI", uid: "deviceId", sortable: true },
+    { name: "TIMESTAMP", uid: "deviceTime", sortable: true },
+    { name: "IGNITION", uid: "ign" },
+    { name: "BATT VOLT", uid: "extVolt" },
   ];
 
-  const INITIAL_VISIBLE_COLUMNS = ["id","name", "email","contactNumber","licenseNumber","role"];
+  const INITIAL_VISIBLE_COLUMNS = [
+    "vehicleNo",
+    "deviceId",
+    "deviceTime",
+    "ign",
+    "extVolt",
+  ];
 
+  React.useEffect(() => {
+    loadDashboard();
+  }, [fetchVehicleList]);
 
   return (
     <>
@@ -144,13 +226,16 @@ const Dashboard = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {cardsData.map((card, index) => (
-              <Card key={index} className="w-full max-w-[400px] mx-auto">
+            {mapCardData.map((card, index) => (
+              <Card isPressable={card?.key !== 'never_connected'} shadow="md" key={index} className="w-full max-w-[400px] mx-auto" onPress={() => {console.log(card); setMarkersList({
+                colorCode: card?.colorCode,
+                items: card?.items,
+              })}}>
                 <CardHeader className="flex gap-3">
-                  <CarFront color={card.colorCode} size={40} />
+                  <CarFront color={card?.colorCode} size={40} />
                   <div className="flex flex-col">
-                    <p className="text-md">{card.name}</p>
-                    <h4 className="font-bold text-large">{card.count}</h4>
+                    <p className="text-md">{card?.name}</p>
+                    <p className="font-bold text-large text-start">{card?.count}</p>
                   </div>
                 </CardHeader>
               </Card>
@@ -159,12 +244,16 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mt-16">
             <div className="col-span-1 md:col-span-7">
-              <GenericTable columns={columns} data={[]}  initialVisibleColumns={INITIAL_VISIBLE_COLUMNS} />
+              <GenericTable
+                columns={columns}
+                data={tableData}
+                initialVisibleColumns={INITIAL_VISIBLE_COLUMNS}
+              />
             </div>
             <div className="col-span-1 md:col-span-5">
               <Card>
                 <CardBody>
-                  <GenericMap />
+                  <GenericMap markers={markersList} />
                 </CardBody>
               </Card>
             </div>
